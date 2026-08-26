@@ -140,7 +140,6 @@ function ensureSharedDOM(showToggle: boolean): void {
   label.style.borderRadius = '4px';
   label.style.zIndex = '9999';
   label.style.userSelect = 'none';
-  if (!showToggle) label.style.display = 'none';
 
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
@@ -148,7 +147,20 @@ function ensureSharedDOM(showToggle: boolean): void {
   checkbox.setAttribute('switch', '');
   checkbox.style.all = 'initial';
   checkbox.style.appearance = 'auto';
-  if (!showToggle) checkbox.style.display = 'none';
+
+  if (!showToggle) {
+    // Keep the native WebKit switch in the render tree. display:none removes
+    // its renderer and can disable the switch-backed haptic path on iOS.
+    label.style.opacity = '0';
+    label.style.pointerEvents = 'none';
+    label.style.width = '1px';
+    label.style.height = '1px';
+    label.style.padding = '0';
+    label.style.overflow = 'hidden';
+
+    checkbox.style.opacity = '0';
+    checkbox.style.pointerEvents = 'none';
+  }
 
   label.appendChild(checkbox);
   document.body.appendChild(label);
@@ -279,21 +291,27 @@ export class SimulationActuator implements HapticActuator {
 
   /** Cancel every live train. */
   cancel(): void {
-    for (const r of this.runners.values()) r.cancel();
+    for (const { cancel } of this.runners.values()) cancel();
     this.runners.clear();
     this.controllers.clear();
   }
 
-  activeTrackCount(): number {
-    return this.runners.size;
-  }
-
-  /** Field diagnostics: measured pulse cadence vs requested. */
-  getPulseStats(requestedIntervalMs?: number): PulseStats {
-    return getPulseStats(requestedIntervalMs);
-  }
-
-  destroy(): void {
+  async destroy(): Promise<void> {
     this.cancel();
+    if (sharedLabel) {
+      sharedLabel.remove();
+      sharedLabel = null;
+    }
+    if (audioCtx) {
+      try { await audioCtx.close(); } catch { /* ignore */ }
+      audioCtx = null;
+      audioFilter = null;
+      audioGain = null;
+      audioBuffer = null;
+    }
+  }
+
+  getPulseStats(requested = TOGGLE_MIN): PulseStats {
+    return getPulseStats(requested);
   }
 }
