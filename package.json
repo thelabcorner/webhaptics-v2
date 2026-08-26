@@ -8,6 +8,8 @@
     "build": "pnpm --filter=web-haptics build",
     "site:dev": "pnpm --filter=site dev",
     "site:build": "pnpm run build && pnpm --filter=site build",
+    "explorer:dev": "pnpm --filter=haptic-state-space dev",
+    "explorer:build": "pnpm --filter=haptic-state-space build",
     "lint": "pnpm --filter=web-haptics lint",
     "lint:fix": "pnpm --filter=web-haptics lint:fix",
     "pre-commit": "pnpm run --filter=web-haptics pre-commit",
