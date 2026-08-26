@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <title>iOS PWA Haptics Lab</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      background: #09090b;
+      color: #fafafa;
+      font: 14px/1.4 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      padding: max(20px, env(safe-area-inset-top)) 16px max(30px, env(safe-area-inset-bottom));
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 24px;
+    }
+
+    .muted {
+      color: #a1a1aa;
+    }
+
+    .card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 14px;
+      padding: 14px;
+      margin-top: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    button,
+    .fake-button {
+      appearance: none;
+      border: 1px solid #3f3f46;
+      background: #27272a;
+      color: #fafafa;
+      border-radius: 10px;
+      padding: 14px 10px;
+      font: inherit;
+      font-weight: 600;
+      text-align: center;
+      touch-action: manipulation;
+    }
+
+    button:active,
+    .fake-button:active {
+      background: #3f3f46;
+      transform: scale(.98);
+    }
+
+    .danger {
+      background: #3f1d1d;
+    }
+
+    .switch-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 50px;
+      border-bottom: 1px solid #27272a;
+    }
+
+    .switch-row:last-child {
+      border-bottom: none;
+    }
+
+    input[switch] {
+      transform: scale(1.15);
+    }
+
+    pre {
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 0;
+      font-size: 12px;
+      color: #d4d4d8;
+    }
+
+    #flash {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: white;
+      opacity: 0;
+    }
+
+    #flash.on {
+      animation: flash 80ms;
+    }
+
+    @keyframes flash {
+      0% { opacity: .12; }
+      100% { opacity: 0; }
+    }
+  </style>
+</head>
+
+<body>
+<div id="flash"></div>
+
+<h1>Haptics Lab</h1>
+<div class="muted">
+  Safari / iOS PWA haptic capability probe (iOS 18 test)
+</div>
+
+<section class="card">
+  <strong>Environment</strong>
+  <pre id="info"></pre>
+</section>
+
+<section class="card">
+  <strong>Vibration API</strong>
+  <div class="muted">
+    These test navigator.vibrate(). Expected to fail on current iOS.
+  </div>
+
+  <div class="grid">
+    <button onclick="vibrate(5)">5 ms tick</button>
+    <button onclick="vibrate(15)">15 ms tick</button>
+    <button onclick="vibrate(30)">30 ms</button>
+    <button onclick="vibrate(60)">60 ms</button>
+    <button onclick="vibrate(100)">100 ms</button>
+    <button onclick="vibrate(250)">250 ms</button>
+    <button onclick="vibrate([10, 40, 10])">Double Tick</button>
+    <button onclick="vibrate([15, 35, 15, 35, 15])">Triple Tick</button>
+    <button onclick="vibrate([20, 20, 20, 20, 80])">Escalating-ish</button>
+    <button onclick="vibrate([100, 40, 20])">Heavy → Light</button>
+    <button onclick="vibrate([100,50,100,50,100,150,300,50,300,50,300,150,100,50,100,50,100])">SOS</button>
+    <button class="danger" onclick="stopVibration()">STOP</button>
+  </div>
+</section>
+
+<section class="card">
+  <strong>WebKit native haptics (iOS 18 test)</strong>
+
+  <p class="muted">
+    Physically tap these switches. iOS 18+ should produce a native Taptic Engine click.
+  </p>
+
+  <label class="switch-row">
+    <span>Native switch A</span>
+    <input type="checkbox" switch>
+  </label>
+
+  <label class="switch-row">
+    <span>Native switch B</span>
+    <input type="checkbox" switch checked>
+  </label>
+
+  <label class="switch-row">
+    <span>Rapid-test switch</span>
+    <input id="rapidSwitch" type="checkbox" switch>
+  </label>
+</section>
+
+<section class="card">
+  <strong>Activation experiments</strong>
+  <p class="muted">
+    These test whether WebKit haptic behavior can be triggered indirectly.
+  </p>
+
+  <div class="grid">
+    <label class="fake-button">
+      Label → switch
+      <input type="checkbox" switch style="position:absolute;opacity:0;width:1px;height:1px;">
+    </label>
+
+    <button onclick="programmaticSwitch()">JS .click() switch</button>
+    <button onclick="toggleSwitchProperty()">JS checked =</button>
+    <button id="touchTest">pointerdown test</button>
+    <button onclick="programmaticLabel()">JS .click() LABEL ★</button>
+    <button onclick="labelPulse(3, 70)">3 × label.click()</button>
+    <button onclick="labelPulse(5, 40)">5 × fast label</button>
+    <button onclick="labelPulse(10, 25)">10 × very fast label</button>
+    <button onclick="sustainedLabel(1000, 16)">SUSTAIN 1s @ 16ms</button>
+    <button onclick="sustainedLabel(1000, 30)">SUSTAIN 1s @ 30ms</button>
+    <button onclick="sustainedLabel(2000, 50)">SUSTAIN 2s @ 50ms</button>
+    <button onclick="sustainedLabel(30000, 16)">SUSTAIN 30s @ 16ms ★</button>
+    <button onclick="sustainedLabel(30000, 25)">SUSTAIN 30s @ 25ms</button>
+    <button class="danger" onclick="stopSustain()">STOP SUSTAIN</button>
+    <button onclick="recoveryProbe()">RECOVERY PROBE ★</button>
+    <button onclick="burstEnvelope()">BURST ENVELOPE 4+400ms</button>
+  </div>
+
+  <input id="hiddenSwitch" type="checkbox" switch style="position:absolute;left:-10000px;width:1px;height:1px;">
+  <label id="hiddenLabel" for="hiddenSwitch" style="position:absolute;left:-10000px;width:1px;height:1px;">pulse</label>
+</section>
+
+<section class="card">
+  <strong>Timing / Pattern Experiments</strong>
+
+  <div class="grid">
+    <button onclick="pulseSequence(3, 70)">3 × JS switch click</button>
+    <button onclick="pulseSequence(5, 40)">5 × fast</button>
+    <button onclick="pulseSequence(10, 25)">10 × very fast</button>
+    <button onclick="mixedTest()">Vibrate + Switch</button>
+  </div>
+</section>
+
+<section class="card">
+  <strong>Log</strong>
+  <pre id="log"></pre>
+</section>
+
+<script>
+  const logEl = document.querySelector("#log");
+  const infoEl = document.querySelector("#info");
+  const hiddenSwitch = document.querySelector("#hiddenSwitch");
+  const hiddenLabel = document.querySelector("#hiddenLabel");
+  const rapidSwitch = document.querySelector("#rapidSwitch");
+
+  function log(...args) {
+    const line = `[${performance.now().toFixed(1)}ms] ` + args.map(x => typeof x === "object" ? JSON.stringify(x) : String(x)).join(" ");
+    logEl.textContent = line + "\n" + logEl.textContent;
+    console.log(...args);
+  }
+
+  function vibrate(pattern) {
+    if ("vibrate" in navigator) {
+      try {
+        const result = navigator.vibrate(pattern);
+        log("navigator.vibrate", JSON.stringify(pattern), "=>", result);
+        return result;
+      } catch (error) {
+        log("vibrate error:", error.name, error.message);
+        return false;
+      }
+    }
+    log("navigator.vibrate NOT AVAILABLE", pattern);
+    return false;
+  }
+
+  function stopVibration() {
+    if ("vibrate" in navigator) {
+      navigator.vibrate(0);
+      log("vibration cancelled");
+    }
+  }
+
+  function programmaticSwitch() {
+    log("hidden switch .click()");
+    hiddenSwitch.click();
+    log("checked:", hiddenSwitch.checked);
+  }
+
+  function programmaticLabel() {
+    log("LABEL .click() (library mechanism)");
+    hiddenLabel.click();
+    log("checked after label click:", hiddenSwitch.checked);
+  }
+
+  async function labelPulse(count, delay) {
+    log("label pulse sequence:", count, "×", delay + "ms");
+    for (let i = 0; i < count; i++) {
+      hiddenLabel.click();
+      await sleep(delay);
+    }
+    log("label pulse done");
+  }
+
+  let sustainAbort = false;
+
+  function stopSustain() {
+    sustainAbort = true;
+    log("SUSTAIN stop requested");
+  }
+
+  async function sustainedLabel(durationMs, intervalMs) {
+    log("SUSTAIN start:", durationMs + "ms", "@", intervalMs + "ms");
+    sustainAbort = false;
+    const end = performance.now() + durationMs;
+    let n = 0;
+    let nextProgress = 1000;
+    while (performance.now() < end) {
+      if (sustainAbort) { log("SUSTAIN aborted at click", n); return; }
+      hiddenLabel.click();
+      n++;
+      if (performance.now() >= end - durationMs + nextProgress) {
+        log(`  …${Math.round((nextProgress / 1000))}s elapsed, ${n} clicks`);
+        nextProgress += 1000;
+      }
+      await sleep(intervalMs);
+    }
+    log("SUSTAIN done —", n, "clicks.",
+        "Expected ≈" + Math.floor(durationMs / intervalMs) + ".",
+        "Note when it went silent/slow.");
+  }
+
+  // Drain the bucket hard, then probe single clicks to find refill time.
+  async function recoveryProbe() {
+    log("RECOVERY: draining with 8 rapid clicks…");
+    for (let i = 0; i < 8; i++) { hiddenLabel.click(); await sleep(16); }
+    log("RECOVERY: drained. Waiting 2s…");
+    await sleep(2000);
+    log("RECOVERY: probing 1 click / 800ms × 15 — note WHICH numbers you FEEL:");
+    for (let i = 1; i <= 15; i++) {
+      hiddenLabel.click();
+      log(`  probe #${i}`);
+      await sleep(800);
+    }
+    log("RECOVERY done — report felt probe numbers.");
+  }
+
+  // Hypothesis-driven rendering: bursts of 4 rapid pulses, long recovery gap.
+  async function burstEnvelope() {
+    log("BURST ENVELOPE: 5s of (4 pulses @16ms) + 400ms rest");
+    const end = performance.now() + 5000;
+    let bursts = 0;
+    while (performance.now() < end) {
+      for (let i = 0; i < 4 && performance.now() < end; i++) {
+        hiddenLabel.click();
+        await sleep(16);
+      }
+      bursts++;
+      await sleep(400);
+    }
+    log("BURST done —", bursts, "bursts. Continuous-feeling?");
+  }
+
+  function toggleSwitchProperty() {
+    hiddenSwitch.checked = !hiddenSwitch.checked;
+    hiddenSwitch.dispatchEvent(new Event("change", { bubbles: true }));
+    log("checked property toggled:", hiddenSwitch.checked);
+  }
+
+  async function pulseSequence(count, delay) {
+    log("sequence:", count, "pulses", delay + "ms apart");
+    for (let i = 0; i < count; i++) {
+      hiddenSwitch.click();
+      await sleep(delay);
+    }
+  }
+
+  async function mixedTest() {
+    log("mixed vibration + switch");
+    vibrate([15, 30, 15]);
+    await sleep(50);
+    hiddenSwitch.click();
+    await sleep(50);
+    vibrate(30);
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  document.querySelector("#touchTest").addEventListener("pointerdown", event => {
+    log("pointerdown", "type=" + event.pointerType, "trusted=" + event.isTrusted);
+    vibrate(15);
+    hiddenSwitch.click();
+  }, { passive: true });
+
+  hiddenSwitch.addEventListener("change", event => {
+    log("hidden switch change", "trusted=" + event.isTrusted, "checked=" + hiddenSwitch.checked);
+  });
+
+  rapidSwitch.addEventListener("change", () => {
+    log("rapid switch change", "checked=" + rapidSwitch.checked);
+  });
+
+  const standalone = window.matchMedia("(display-mode: standalone)").matches;
+
+  infoEl.textContent = [
+    `navigator.vibrate: ${"vibrate" in navigator ? "YES" : "NO"}`,
+    `display-mode standalone: ${standalone}`,
+    `navigator.standalone: ${navigator.standalone ?? "undefined"}`,
+    `maxTouchPoints: ${navigator.maxTouchPoints}`,
+    `userAgent: ${navigator.userAgent}`,
+    `platform: ${navigator.platform}`,
+    `iOS 18 detected: ${/iPad|iPhone|iPod/.test(navigator.userAgent)}`
+  ].join("\n");
+
+  log("Haptics Lab initialized (iOS 18 test)");
+</script>
+</body>
+</html>

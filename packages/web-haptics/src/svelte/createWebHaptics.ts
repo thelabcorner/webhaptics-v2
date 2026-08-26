@@ -1,19 +1,22 @@
-import { WebHaptics } from "../lib/web-haptics";
-import type {
-  HapticInput,
-  TriggerOptions,
-  WebHapticsOptions,
-} from "../lib/web-haptics/types";
+import { CoreEngine } from "../core/engine";
+import type { HapticInput, TriggerOptions, HapticsOptions } from "../core/types";
 
-export function createWebHaptics(options?: WebHapticsOptions) {
-  const instance = new WebHaptics(options);
+/**
+ * v2 Svelte factory — backed by CoreEngine (actuator auto-select,
+ * pulse-density simulation, PWM vibrate patterns).
+ */
+export function createWebHaptics(options?: HapticsOptions) {
+  const instance = new CoreEngine(options);
 
-  const trigger = (input?: HapticInput, options?: TriggerOptions) =>
-    instance.trigger(input, options);
+  const trigger = (input?: HapticInput, opts?: TriggerOptions) =>
+    instance.trigger(input ?? "medium", opts);
   const cancel = () => instance.cancel();
   const destroy = () => instance.destroy();
   const setDebug = (debug: boolean) => instance.setDebug(debug);
-  const isSupported = WebHaptics.isSupported;
+
+  const isSupported =
+    typeof navigator !== "undefined" &&
+    (typeof navigator.vibrate === "function" || true); // simulation fallback
 
   return { trigger, cancel, destroy, setDebug, isSupported };
 }

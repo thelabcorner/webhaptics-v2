@@ -1,12 +1,22 @@
-export { version } from "./../package.json";
+import { WebHaptics } from './core/engine';
 
-export { WebHaptics } from "./lib/web-haptics";
-export { defaultPatterns } from "./lib/web-haptics/patterns";
+export { WebHaptics } from './core/engine';
+export { createWebHaptics } from './core/engine'; // explicit override of any legacy star-export
+export { registerPreset, getRegistry, DefaultPresetRegistry } from './core/presetRegistry';
+export { defaultPatterns } from './lib/web-haptics/patterns'; // compat for demo.tsx
+export const haptics = new WebHaptics();
+export const version = '2.0.0'; // satisfies site import
+
 export type {
-  Vibration,
-  HapticPattern,
-  HapticPreset,
   HapticInput,
+  Vibration,
+  HapticPreset,
   TriggerOptions,
-  WebHapticsOptions,
-} from "./lib/web-haptics/types";
+  HapticsOptions,
+  PresetName,
+  HapticActuator,
+} from './core/types';
+
+// Framework adapters (import from "web-haptics/react" etc.)
+export * from './vue';
+export * from './svelte';

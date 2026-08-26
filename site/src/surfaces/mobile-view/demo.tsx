@@ -1,6 +1,7 @@
 import styles from "./styles.module.scss";
 
 import { defaultPatterns } from "web-haptics";
+import { HapticButton } from "web-haptics/react";
 import { useRef } from "react";
 import { useParticles, type EmojiOption } from "../../components/particles";
 import { useHaptics } from "../../hooks/useHaptics";
@@ -105,8 +106,8 @@ export const Demo = ({
               )
             }
           >
-            <button
-              data-pattern={name}
+            <HapticButton
+              effect={name}
               onClick={(e) => {
                 const x =
                   e.clientX ||
@@ -120,7 +121,7 @@ export const Demo = ({
               }}
             >
               <span>{name.charAt(0).toUpperCase() + name.slice(1)}</span>
-            </button>
+            </HapticButton>
           </div>
         ))}
       </div>

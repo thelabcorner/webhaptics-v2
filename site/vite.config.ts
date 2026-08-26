@@ -6,6 +6,11 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     exclude: ["@node-rs/argon2"],
   },
+  server: {
+    port: 41513,
+    host: true, // accessible on local network (0.0.0.0)
+    strictPort: true,
+  },
   plugins: [
     react(),
     {

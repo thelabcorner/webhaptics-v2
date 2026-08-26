@@ -1,20 +1,28 @@
 import { onMounted, onUnmounted, watch } from "vue";
-import { WebHaptics } from "../lib/web-haptics";
-import type {
-  HapticInput,
-  TriggerOptions,
-  WebHapticsOptions,
-} from "../lib/web-haptics/types";
+import { CoreEngine } from "../core/engine";
+import type { HapticInput, TriggerOptions, HapticsOptions } from "../core/types";
 
-export function useWebHaptics(options?: WebHapticsOptions) {
-  let instance: WebHaptics | null = null;
+/**
+ * v2 Vue composable — backed by CoreEngine (actuator auto-select,
+ * pulse-density simulation, PWM vibrate patterns).
+ */
+export function useWebHaptics(options?: HapticsOptions) {
+  let instance: CoreEngine | null = null;
+
+  const getOrCreate = (): CoreEngine => {
+    if (!instance) instance = new CoreEngine(options);
+    return instance;
+  };
+
+  // SSR-safe: create eagerly so setup()-returned methods work immediately
+  getOrCreate();
 
   onMounted(() => {
-    instance = new WebHaptics(options);
+    if (!instance) instance = new CoreEngine(options);
   });
 
   onUnmounted(() => {
-    instance?.destroy();
+    void instance?.destroy();
     instance = null;
   });
 
@@ -25,10 +33,13 @@ export function useWebHaptics(options?: WebHapticsOptions) {
     },
   );
 
-  const trigger = (input?: HapticInput, options?: TriggerOptions) =>
-    instance?.trigger(input, options);
+  const trigger = (input?: HapticInput, opts?: TriggerOptions) =>
+    getOrCreate().trigger(input ?? "medium", opts);
   const cancel = () => instance?.cancel();
-  const isSupported = WebHaptics.isSupported;
+
+  const isSupported =
+    typeof navigator !== "undefined" &&
+    (typeof navigator.vibrate === "function" || true); // simulation fallback
 
   return { trigger, cancel, isSupported };
 }
