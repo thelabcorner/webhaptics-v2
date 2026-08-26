@@ -15,6 +15,7 @@ export type {
   HapticsOptions,
   PresetName,
   HapticActuator,
+  HapticEngine,
 } from './core/types';
 
 // Framework adapters (import from "web-haptics/react" etc.)
