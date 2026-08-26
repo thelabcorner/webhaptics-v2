@@ -9,7 +9,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "^4.6.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "web-haptics": "workspace:*"
@@ -17,6 +16,7 @@
   "devDependencies": {
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react": "^4.6.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vite-plugin-singlefile": "^2.3.3"
