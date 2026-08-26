@@ -53,11 +53,11 @@ jobs:
           test "$(find apps/haptic-state-space/dist -maxdepth 1 -type f | wc -l)" -eq 1
 
       - name: Publish single HTML artifact into the repository
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         run: cp apps/haptic-state-space/dist/index.html apps/haptic-state-space/haptic-state-space.html
 
       - name: Commit generated HTML and lockfile
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
