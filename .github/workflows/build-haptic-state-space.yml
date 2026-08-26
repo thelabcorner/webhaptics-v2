@@ -1,0 +1,60 @@
+name: Build haptic state-space explorer
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/build-haptic-state-space.yml"
+      - "apps/haptic-state-space/**"
+      - "packages/web-haptics/src/**"
+      - "!apps/haptic-state-space/haptic-state-space.html"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: haptic-state-space-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+          run_install: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install workspace
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build standalone explorer
+        run: pnpm explorer:build
+
+      - name: Publish single HTML artifact into the repository
+        run: cp apps/haptic-state-space/dist/index.html apps/haptic-state-space/haptic-state-space.html
+
+      - name: Commit generated HTML and lockfile
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pnpm-lock.yaml
+          git add -f apps/haptic-state-space/haptic-state-space.html
+          if git diff --cached --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git commit -m "build: refresh standalone haptic explorer"
+          git push
