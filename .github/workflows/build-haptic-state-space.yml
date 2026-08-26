@@ -8,13 +8,18 @@ on:
       - "apps/haptic-state-space/**"
       - "packages/web-haptics/src/**"
       - "!apps/haptic-state-space/haptic-state-space.html"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/haptic-state-space/**"
+      - "packages/web-haptics/src/**"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: haptic-state-space-build
+  group: haptic-state-space-build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -42,10 +47,17 @@ jobs:
       - name: Build standalone explorer
         run: pnpm explorer:build
 
+      - name: Verify single-file output
+        run: |
+          test -f apps/haptic-state-space/dist/index.html
+          test "$(find apps/haptic-state-space/dist -maxdepth 1 -type f | wc -l)" -eq 1
+
       - name: Publish single HTML artifact into the repository
+        if: github.event_name == 'push'
         run: cp apps/haptic-state-space/dist/index.html apps/haptic-state-space/haptic-state-space.html
 
       - name: Commit generated HTML and lockfile
+        if: github.event_name == 'push'
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
